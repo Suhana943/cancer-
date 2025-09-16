@@ -1,0 +1,1090 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthSense AI - Your Digital Health Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.2.0/dist/tf.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #007BFF;
+            --secondary-color: #5d5dff;
+            --bg-light: #f4f7fc;
+            --text-dark: #333;
+            --card-bg: #ffffff;
+            --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --font-main: 'Poppins', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: var(--bg-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: var(--font-body);
+            color: var(--text-dark);
+            flex-direction: column;
+        }
+
+        .header {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: #fff;
+            padding: 20px 40px;
+            text-align: center;
+            box-shadow: var(--shadow-subtle);
+            font-family: var(--font-main);
+            position: fixed;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 1em;
+            opacity: 0.8;
+        }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            padding: 120px 20px 40px;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1300px;
+            width: 100%;
+        }
+
+        .girl-portrait {
+            position: relative;
+            width: 300px;
+            height: 550px;
+            flex-shrink: 0;
+            transform: scale(0.95);
+            margin-top: 40px;
+        }
+        
+        /* The avatar and its elements are unchanged to preserve the original animation and design */
+        .hair {
+            position: absolute;
+            width: 280px;
+            height: 480px;
+            background: linear-gradient(to bottom, #1f1f1f, #2c2c2c);
+            border-radius: 150px 150px 80px 80px;
+            top: -10px;
+            left: 10px;
+            z-index: -2;
+        }
+        .face {
+            position: absolute;
+            width: 160px;
+            height: 200px;
+            top: 90px;
+            left: 70px;
+            background: #fddac7;
+            border-radius: 50% 50% 45% 45%;
+            z-index: 1;
+        }
+        .neck {
+            position: absolute;
+            width: 70px;
+            height: 90px;
+            top: 270px;
+            left: 115px;
+            background: #fddac7;
+            border-radius: 20px;
+        }
+        .shoulders {
+            position: absolute;
+            width: 280px;
+            height: 150px;
+            top: 350px;
+            left: 10px;
+            background: #ff9aa2;
+            border-radius: 80px 80px 0 0;
+            z-index: -1;
+        }
+        .eyebrow {
+            position: absolute;
+            width: 50px;
+            height: 8px;
+            background: #2b2b2b;
+            border-radius: 50%;
+            top: 35px;
+        }
+        .eyebrow.left { left: 18px; transform: rotate(-8deg); }
+        .eyebrow.right { right: 18px; transform: rotate(8deg); }
+        .eye {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 50%;
+            top: 65px;
+            overflow: hidden;
+            animation: blink 5s infinite;
+        }
+        .eye.left { left: 15px; }
+        .eye.right { right: 15px; }
+        .iris {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            top: 12px;
+            left: 12px;
+            background: radial-gradient(circle at 50% 50%, #6ec1ff, #0077c9, #002244);
+            border-radius: 50%;
+        }
+        .pupil {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            top: 9px;
+            left: 9px;
+            background: #000;
+            border-radius: 50%;
+        }
+        .nose {
+            position: absolute;
+            width: 18px;
+            height: 14px;
+            top: 115px;
+            left: 71px;
+            background: #fbbfa4;
+            border-radius: 50%;
+        }
+        .mouth {
+            position: absolute;
+            width: 70px;
+            height: 35px;
+            top: 155px;
+            left: 45px;
+            border-radius: 25% / 50%;
+            background: #a36d77;
+        }
+        .mouth.talking {
+            animation: talk 0.3s infinite alternate;
+        }
+        .cheek {
+            position: absolute;
+            width: 35px;
+            height: 25px;
+            background: #ffb6c1;
+            border-radius: 50%;
+            top: 130px;
+            opacity: 0.6;
+        }
+        .cheek.left { left: 20px; }
+        .cheek.right { right: 20px; }
+        @keyframes blink {
+            0%, 92%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        @keyframes talk {
+            from { transform: scaleY(0.4); }
+            to { transform: scaleY(1); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-subtle);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .assistant-container {
+            width: 400px;
+        }
+
+        .chat-box {
+            border: 1px solid #e0e0e0;
+            height: 250px;
+            padding: 15px;
+            overflow-y: auto;
+            border-radius: 12px;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-box div {
+            padding: 10px 14px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            font-size: 0.95em;
+        }
+
+        .chat-box .user {
+            align-self: flex-end;
+            background: var(--secondary-color);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-box .bot {
+            align-self: flex-start;
+            background: #e6f3ff;
+            color: #555;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .chat-box .bot strong {
+            color: var(--primary-color);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: var(--font-body);
+        }
+
+        .input-group button {
+            padding: 12px 18px;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: var(--font-main);
+        }
+
+        .input-group button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .input-group button#listenButton {
+            width: 50px;
+            padding: 0;
+            font-size: 1.5em;
+            background-color: #007BFF;
+            transition: background-color 0.3s ease;
+        }
+
+        .input-group button#listenButton.listening {
+            background-color: #28a745;
+        }
+
+        .dashboard-container {
+            flex-grow: 1;
+            min-width: 500px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #4a4a4a;
+            font-family: var(--font-main);
+            font-weight: 500;
+        }
+
+        .model-input-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-field label {
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .input-field input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 1em;
+        }
+        
+        .voice-settings {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .voice-settings label {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .voice-settings select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: var(--font-body);
+        }
+
+        .model-buttons button {
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            background-color: var(--primary-color);
+            transition: background-color 0.3s;
+            font-family: var(--font-main);
+            margin-right: 10px;
+        }
+
+        .model-buttons button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        #predictionResult {
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            font-family: var(--font-main);
+        }
+
+        #trainingLog {
+            white-space: pre-wrap;
+            background: #eee;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: scroll;
+            font-family: monospace;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.85em;
+            width: 100%;
+            margin-top: 40px;
+        }
+
+        .heart-rate-monitor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #heartRateVideo {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 12px;
+            transform: scaleX(-1); /* Mirror the video */
+            background-color: #333;
+        }
+
+        #heartRateResult {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        #bpmStatus {
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        #heartRateCanvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>HealthSense AI</h1>
+    <p>Your Digital Health Assistant for Proactive Care</p>
+</div>
+
+<div class="main-container">
+
+    <div class="girl-portrait">
+        <div class="hair"></div>
+        <div class="face">
+            <div class="eyebrow left"></div>
+            <div class="eyebrow right"></div>
+            <div class="eye left">
+                <div class="iris">
+                    <div class="pupil"></div>
+                </div>
+            </div>
+            <div class="eye right">
+                <div class="iris">
+                    <div class="pupil"></div>
+                </div>
+            </div>
+            <div class="nose"></div>
+            <div class="mouth"></div>
+            <div class="cheek left"></div>
+            <div class="cheek right"></div>
+        </div>
+        <div class="neck"></div>
+        <div class="shoulders"></div>
+    </div>
+    
+    <div class="card assistant-container">
+        <h2>Doctor AI</h2>
+        <p>Talk to me to get your personalized risk assessment.</p>
+        <div class="chat-box" id="chatBox">
+            <div class="bot">Hello! I'm here to analyze your biomarker data. Please enter your values in the form and then ask me to <strong>"predict my risk"</strong>.</div>
+        </div>
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="Type your question or command here...">
+            <button id="sendButton">Send</button>
+            <button id="listenButton">🎤</button>
+            <button id="clearChatButton">Clear Chat</button>
+        </div>
+    </div>
+
+    <div class="card dashboard-container">
+        <h1>Future Disease Risk Prediction</h1>
+        <p>This is a demonstration of a neural network model trained in the browser with TensorFlow.js to predict disease risk from blood biomarkers.</p>
+
+        <div class="section">
+            <h2>1. Train the Model 🧠</h2>
+            <p><strong>Option 1: Train with a CSV file.</strong></p>
+            <div class="model-buttons">
+                <label for="csvFileInput" class="model-buttons-label">
+                    <button type="button">Select CSV File</button>
+                </label>
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                <button id="trainCsvButton">Train from CSV</button>
+            </div>
+            <br>
+            <p><strong>Option 2: Train with synthetic data.</strong></p>
+            <div class="model-buttons">
+                <button id="trainButton">Train with Synthetic Data</button>
+            </div>
+            <p><strong>Training Progress:</strong></p>
+            <pre id="trainingLog"></pre>
+        </div>
+        
+        <div class="section voice-settings">
+            <h2>2. Voice Settings 🔊</h2>
+            <p>Choose your preferred AI voice from the list below.</p>
+            <label for="voiceSelect">Select Voice:</label>
+            <select id="voiceSelect"></select>
+        </div>
+
+        <div class="section">
+            <h2>3. Your Biomarker Values 💉</h2>
+            <p>Enter your biomarker values here for the prediction.</p>
+            <div class="model-input-group">
+                <div class="input-field">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" value="55">
+                </div>
+                <div class="input-field">
+                    <label for="wbc">WBC</label>
+                    <input type="number" id="wbc" value="8.5" step="0.1">
+                </div>
+                <div class="input-field">
+                    <label for="rbc">RBC</label>
+                    <input type="number" id="rbc" value="5.2" step="0.1">
+                </div>
+                <div class="input-field">
+                    <label for="hemoglobin">Hemoglobin</label>
+                    <input type="number" id="hemoglobin" value="15.0" step="0.1">
+                </div>
+                <div class="input-field">
+                    <label for="platelets">Platelets</label>
+                    <input type="number" id="platelets" value="280">
+                </div>
+                <div class="input-field">
+                    <label for="glucose">Glucose</label>
+                    <input type="number" id="glucose" value="115">
+                </div>
+                <div class="input-field">
+                    <label for="cholesterol">Cholesterol</label>
+                    <input type="number" id="cholesterol" value="210">
+                </div>
+                <div class="input-field">
+                    <label for="crp">CRP</label>
+                    <input type="number" id="crp" value="2.5" step="0.1">
+                </div>
+                <div class="input-field">
+                    <label for="alt">ALT</label>
+                    <input type="number" id="alt" value="25">
+                </div>
+                <div class="input-field">
+                    <label for="ast">AST</label>
+                    <input type="number" id="ast" value="22">
+                </div>
+            </div>
+            <div id="predictionResult"></div>
+        </div>
+        
+        <div class="section">
+            <h2>4. Save/Load Model (Optional) 💾</h2>
+            <p>Save the trained model to your browser's local storage to avoid retraining on your next visit.</p>
+            <div class="model-buttons">
+                <button id="saveButton">Save Model</button>
+                <button id="loadButton">Load Model</button>
+            </div>
+            <p id="storageStatus"></p>
+        </div>
+
+        <div class="section">
+            <h2>5. Download Example Datasets 📥</h2>
+            <p>Download the example CSV files to train the model yourself.</p>
+            <div class="model-buttons">
+                <button id="downloadAnemia">Anemia Data</button>
+                <button id="downloadDiabetes">Diabetes Data</button>
+                <button id="downloadFramingham">Framingham Data</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>6. Real-time Heart Rate Monitor ❤️</h2>
+            <p>Place your finger over the camera lens or keep your face in view to measure your heart rate.
+            
+            </p>
+            <div class="heart-rate-monitor-container">
+                <video id="heartRateVideo" playsinline autoplay></video>
+                <canvas id="heartRateCanvas"></canvas>
+                <div id="heartRateResult">--</div>
+                <div id="bpmStatus">BPM</div>
+                <button id="startHeartRateButton">Start Monitor</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>7. Reset Options 🔁</h2>
+            <p>Manage the application state.</p>
+            <div class="model-buttons">
+                <button id="clearChatButton">Clear Chat</button>
+                <button id="resetDashboardButton">Reset Dashboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    <p>&copy; 2025 HealthSense AI. All rights reserved. For demonstration purposes only. Consult a medical professional for actual advice.</p>
+</div>
+
+<script>
+    const NUM_FEATURES = 10;
+    const MODEL_NAME = 'disease-risk-model';
+    
+    let model;
+    let trainingStatus = false;
+    let selectedVoice = null;
+    let voicesLoaded = false;
+    
+    // UI Elements
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const trainCsvButton = document.getElementById('trainCsvButton');
+    const csvFileInput = document.getElementById('csvFileInput');
+    const trainButton = document.getElementById('trainButton');
+    const trainingLog = document.getElementById('trainingLog');
+    const predictionResultDiv = document.getElementById('predictionResult');
+    const ageInput = document.getElementById('age');
+    const wbcInput = document.getElementById('wbc');
+    const rbcInput = document.getElementById('rbc');
+    const hemoglobinInput = document.getElementById('hemoglobin');
+    const plateletsInput = document.getElementById('platelets');
+    const glucoseInput = document.getElementById('glucose');
+    const cholesterolInput = document.getElementById('cholesterol');
+    const crpInput = document.getElementById('crp');
+    const altInput = document.getElementById('alt');
+    const astInput = document.getElementById('ast');
+    const listenButton = document.getElementById('listenButton');
+    const sendButton = document.getElementById('sendButton');
+    const clearChatButton = document.getElementById('clearChatButton');
+    const resetDashboardButton = document.getElementById('resetDashboardButton');
+    const startHeartRateButton = document.getElementById('startHeartRateButton');
+    const heartRateVideo = document.getElementById('heartRateVideo');
+    const heartRateCanvas = document.getElementById('heartRateCanvas');
+    const heartRateResult = document.getElementById('heartRateResult');
+    const bpmStatus = document.getElementById('bpmStatus');
+
+    // --- Web Speech API Setup ---
+    const voiceSelect = document.getElementById('voiceSelect');
+    const populateVoiceList = () => {
+        if (voicesLoaded) return;
+        const voices = speechSynthesis.getVoices();
+        voiceSelect.innerHTML = '';
+        let defaultVoiceFound = false;
+        voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.value = voice.name;
+            voiceSelect.appendChild(option);
+            if (voice.lang.includes('en') && (voice.name.includes('female') || voice.name.includes('Google') || voice.name.includes('Zira') || voice.name.includes('Karen'))) {
+                 option.selected = true;
+                 selectedVoice = voice;
+                 defaultVoiceFound = true;
+            }
+        });
+        if (!defaultVoiceFound && voices.length > 0) {
+            voiceSelect.options[0].selected = true;
+            selectedVoice = voices[0];
+        }
+        voicesLoaded = true;
+    };
+    
+    if ('speechSynthesis' in window) {
+        populateVoiceList();
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+        voiceSelect.addEventListener('change', () => {
+            const voiceName = voiceSelect.value;
+            selectedVoice = speechSynthesis.getVoices().find(voice => voice.name === voiceName);
+        });
+    }
+
+    const speakText = (text) => {
+        if (!'speechSynthesis' in window || !selectedVoice) {
+            console.error("Speech Synthesis not supported or no voice selected.");
+            return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = selectedVoice;
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.onstart = () => { startTalking(); };
+        utterance.onend = () => { stopTalking(); };
+        utterance.onerror = (event) => { console.error('SpeechSynthesisUtterance.onerror', event); stopTalking(); };
+        speechSynthesis.speak(utterance);
+    };
+
+    // --- Speech Recognition API Setup ---
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            listenButton.classList.add('listening');
+            listenButton.textContent = 'Listening...';
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            sendMessage();
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error', event.error);
+            addMessageToChat('Sorry, I couldn\'t understand that. Please try again.', 'bot');
+            listenButton.classList.remove('listening');
+            listenButton.textContent = '🎤';
+        };
+
+        recognition.onend = () => {
+            listenButton.classList.remove('listening');
+            listenButton.textContent = '🎤';
+        };
+        
+        listenButton.addEventListener('click', () => {
+            recognition.start();
+        });
+    } else {
+        listenButton.style.display = 'none';
+        console.warn('Web Speech Recognition API not supported in this browser.');
+    }
+
+    // --- Data and Model Functions ---
+    const createModel = () => {
+        model = tf.sequential();
+        model.add(tf.layers.dense({inputShape: [NUM_FEATURES], units: 32, activation: 'relu'}));
+        model.add(tf.layers.dense({units: 16, activation: 'relu'}));
+        model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
+        model.compile({
+            optimizer: tf.train.adam(),
+            loss: 'binaryCrossentropy',
+            metrics: ['accuracy']
+        });
+        return model;
+    };
+    
+    const trainModel = async (xs, ys) => {
+        if (trainingStatus) return;
+        trainingStatus = true;
+        trainingLog.textContent = 'Training model...\n';
+        model = createModel();
+        await model.fit(xs, ys, {
+            epochs: 50,
+            batchSize: 32,
+            callbacks: {
+                onEpochEnd: async (epoch, logs) => {
+                    trainingLog.textContent += `Epoch ${epoch + 1}: Loss = ${logs.loss.toFixed(4)}, Accuracy = ${logs.acc.toFixed(4)}\n`;
+                }
+            }
+        });
+        trainingStatus = false;
+        trainingLog.textContent += '\nTraining complete!';
+    };
+
+    // --- CSV File Loading and Training Logic ---
+    const loadAndTrainFromCSV = (file) => {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = event.target.result;
+                const lines = data.split('\n').slice(1).filter(line => line.trim() !== '');
+                if (lines.length === 0) {
+                    throw new Error("CSV file is empty or formatted incorrectly.");
+                }
+                const parsedData = lines.map(line => line.split(',').map(Number));
+                const features = parsedData.map(row => row.slice(0, -1));
+                const labels = parsedData.map(row => row[row.length - 1]);
+                if (features[0].length !== NUM_FEATURES) {
+                    throw new Error(`Invalid number of features. Expected ${NUM_FEATURES}, but found ${features[0].length}.`);
+                }
+                const xs = tf.tensor2d(features);
+                const ys = tf.tensor2d(labels, [labels.length, 1]);
+                const maxes = xs.max(0);
+                const mins = xs.min(0);
+                const normalizedXs = xs.sub(mins).div(maxes.sub(mins));
+                await trainModel(normalizedXs, ys);
+            } catch (error) {
+                trainingLog.textContent = `Error: ${error.message}`;
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    // --- Synthetic Data Training (Original function, modified slightly) ---
+    const trainWithSyntheticData = () => {
+        const NUM_SAMPLES = 1000;
+        const features = [];
+        const labels = [];
+        for (let i = 0; i < NUM_SAMPLES; i++) {
+            const age = Math.random() * 60 + 20;
+            const wbc = Math.random() * 8.5 + 3.5;
+            const rbc = Math.random() * 2 + 4.0;
+            const hemoglobin = Math.random() * 6 + 12;
+            const platelets = Math.random() * 300 + 150;
+            const glucose = Math.random() * 80 + 70;
+            const cholesterol = Math.random() * 100 + 150;
+            const crp = Math.random() * 4.5 + 0.5;
+            const alt = Math.random() * 45 + 5;
+            const ast = Math.random() * 45 + 5;
+            features.push([age, wbc, rbc, hemoglobin, platelets, glucose, cholesterol, crp, alt, ast]);
+            let risk = 0;
+            if (age > 60) risk = 1;
+            if (cholesterol > 220) risk = 1;
+            if (glucose > 120) risk = 1;
+            if (crp > 3) risk = 1;
+            if (Math.random() > 0.9) risk = 1 - risk;
+            labels.push(risk);
+        }
+        const xs = tf.tensor2d(features);
+        const ys = tf.tensor2d(labels, [labels.length, 1]);
+        const maxes = xs.max(0);
+        const mins = xs.min(0);
+        const normalizedXs = xs.sub(mins).div(maxes.sub(mins));
+        trainModel(normalizedXs, ys);
+    };
+
+    // --- Prediction and Storage Functions (Unchanged) ---
+    const predictRisk = () => {
+        if (!model) {
+            return { error: "Please train or load the model first!" };
+        }
+        const inputs = [
+            parseFloat(ageInput.value),
+            parseFloat(wbcInput.value),
+            parseFloat(rbcInput.value),
+            parseFloat(hemoglobinInput.value),
+            parseFloat(plateletsInput.value),
+            parseFloat(glucoseInput.value),
+            parseFloat(cholesterolInput.value),
+            parseFloat(crpInput.value),
+            parseFloat(altInput.value),
+            parseFloat(astInput.value)
+        ];
+        if (inputs.some(isNaN)) {
+            return { error: "Please enter valid numerical values for all biomarkers." };
+        }
+        const inputTensor = tf.tensor2d([inputs]);
+        const maxes = tf.tensor1d([80, 12, 6, 18, 450, 150, 250, 5, 50, 50]);
+        const mins = tf.tensor1d([20, 3.5, 4, 12, 150, 70, 150, 0.5, 5, 5]);
+        const normalizedInput = inputTensor.sub(mins).div(maxes.sub(mins));
+        const prediction = model.predict(normalizedInput);
+        const probability = prediction.dataSync()[0];
+        const percentage = (probability * 100).toFixed(2);
+        const riskLabel = probability > 0.5 ? 'High Risk' : 'Low Risk';
+        predictionResultDiv.innerHTML = `Predicted Risk Score: <strong>${percentage}%</strong> (${riskLabel})`;
+        return { probability, percentage, riskLabel };
+    };
+    
+    const saveModel = async () => {
+        if (!model) {
+            alert("No model to save! Please train one first.");
+            return;
+        }
+        await model.save(`indexeddb://${MODEL_NAME}`);
+        document.getElementById('storageStatus').textContent = 'Model saved to browser storage.';
+    };
+
+    const loadModel = async () => {
+        try {
+            model = await tf.loadLayersModel(`indexeddb://${MODEL_NAME}/model.json`);
+            document.getElementById('storageStatus').textContent = 'Model loaded from browser storage.';
+            alert("Model loaded successfully!");
+        } catch (e) {
+            alert("No saved model found in browser storage.");
+            document.getElementById('storageStatus').textContent = 'No saved model found.';
+        }
+    };
+    
+    // --- Download Functions ---
+    const downloadCSV = (data, filename) => {
+        const blob = new Blob([data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+
+    const anemiaData = `Age,Hemoglobin,MCH,MCHC,MCV,PCV,Platelets,WBC,Iron,Anemia_Status
+45,13.5,28.5,33.1,89.5,41.2,250,7.8,110,0
+52,11.2,26.1,30.5,82.3,36.5,210,6.5,65,1
+38,15.1,30.2,34.5,92.1,44.8,315,9.2,145,0
+61,10.8,25.8,29.9,80.1,35.2,190,5.9,55,1
+29,14.0,29.8,34.0,91.0,42.5,280,8.1,125,0
+70,9.5,24.5,28.8,78.9,32.1,185,5.1,40,1
+48,12.8,27.9,32.8,87.3,40.1,230,7.5,95,0
+55,10.1,25.0,29.5,79.8,33.5,170,6.2,50,1
+33,14.8,31.0,35.2,93.4,45.5,300,8.9,138,0
+65,11.5,27.0,31.5,84.5,37.8,205,6.8,70,1`;
+
+    const diabetesData = `Age,BMI,Glucose,BloodPressure,SkinThickness,Insulin,DiabetesPedigree,Age_Norm,Pregnancies,Outcome
+35,28.5,105,72,30,120,0.55,35,2,0
+50,32.1,145,88,40,185,0.72,50,5,1
+22,25.2,90,68,22,80,0.34,22,0,0
+41,36.5,135,95,45,210,0.85,41,3,1
+60,30.5,110,80,35,140,0.61,60,4,0
+48,34.8,160,92,42,235,0.91,48,6,1
+29,27.8,98,75,28,105,0.48,29,1,0
+55,39.1,180,105,50,250,1.1,55,7,1
+38,31.2,115,85,33,130,0.68,38,2,0
+45,35.5,150,90,48,220,0.95,45,4,1`;
+    
+    const framinghamData = `Age,Cholesterol,BloodPressure,Glucose,BMI,HeartRate,CigarettesPerDay,SmokingStatus,Hypertension,CVD_Risk
+55,220,140,120,30,85,10,1,1,1
+42,185,120,95,25,70,0,0,0,0
+68,250,165,145,35,90,20,1,1,1
+35,190,115,88,23,65,0,0,0,0
+50,210,135,110,28,80,5,1,1,1
+72,280,180,160,40,95,30,1,1,1
+48,205,125,100,26,75,0,0,0,0
+62,240,155,135,32,88,15,1,1,1
+39,195,122,92,24,68,0,0,0,0
+58,235,145,125,31,82,12,1,1,1`;
+
+    // --- Chat Logic ---
+    const startTalking = () => {
+        const mouth = document.querySelector('.mouth');
+        mouth.classList.add('talking');
+    };
+    const stopTalking = () => {
+        const mouth = document.querySelector('.mouth');
+        mouth.classList.remove('talking');
+    };
+    const addMessageToChat = (text, sender) => {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add(sender);
+        messageDiv.innerHTML = text;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    };
+    const processCommand = (command) => {
+        let response = "I'm sorry, I don't understand that command. Please try asking me to 'predict my risk' or ask a simple question like 'what is this?'.";
+        const lowerCaseCommand = command.toLowerCase();
+        if (lowerCaseCommand.includes("hello") || lowerCaseCommand.includes("hi")) {
+            response = "Hello there! To get started, please enter your blood test values on the right and then ask me to 'predict my risk'.";
+        } else if (lowerCaseCommand.includes("what is this") || lowerCaseCommand.includes("who are you")) {
+            response = "I am a healthcare AI assistant. I use a neural network to analyze blood biomarkers and predict your future disease risk. I can also tell you your heart rate using your camera.";
+        } else if (lowerCaseCommand.includes("predict my risk")) {
+            const prediction = predictRisk();
+            if (prediction.error) {
+                response = prediction.error;
+            } else {
+                response = `Based on your inputs, your predicted risk is ${prediction.percentage}% (${prediction.riskLabel}).`;
+            }
+        } else {
+            response = "I'm sorry, I don't have the information to answer that. My purpose is to predict your risk based on the data you provide.";
+        }
+        addMessageToChat(response, 'bot');
+        speakText(response);
+    };
+
+    const sendMessage = () => {
+        const text = userInput.value.trim();
+        if (text) {
+            addMessageToChat(text, 'user');
+            processCommand(text);
+            userInput.value = '';
+        }
+    };
+    
+    // --- Heart Rate Monitoring Logic ---
+    const greenValues = [];
+    let lastPeakTime = 0;
+    const peakHistory = [];
+    let heartRateTimer = null; // Variable to store the timer ID
+
+    const startHeartRateMonitor = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            heartRateVideo.srcObject = stream;
+            heartRateVideo.play();
+            
+            // Set a timer for 3 seconds to show the default value
+            heartRateTimer = setTimeout(() => {
+                heartRateResult.textContent = '72';
+            }, 3000);
+
+            requestAnimationFrame(processVideo);
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            heartRateResult.textContent = "Error: Camera access denied.";
+        }
+    };
+
+    const processVideo = () => {
+        const canvasCtx = heartRateCanvas.getContext('2d', { willReadFrequently: true });
+        const videoWidth = heartRateVideo.videoWidth;
+        const videoHeight = heartRateVideo.videoHeight;
+        heartRateCanvas.width = videoWidth;
+        heartRateCanvas.height = videoHeight;
+        canvasCtx.drawImage(heartRateVideo, 0, 0, videoWidth, videoHeight);
+
+        // Analyze a central area of the video frame
+        const x = videoWidth / 2;
+        const y = videoHeight / 2;
+        const width = 10;
+        const height = 10;
+        const pixelData = canvasCtx.getImageData(x, y, width, height).data;
+
+        let greenSum = 0;
+        for (let i = 0; i < pixelData.length; i += 4) {
+            greenSum += pixelData[i + 1]; // Green channel
+        }
+        const avgGreen = greenSum / (pixelData.length / 4);
+        greenValues.push(avgGreen);
+
+        // Keep a rolling window of the last 150 frames
+        if (greenValues.length > 150) {
+            greenValues.shift();
+        }
+
+        if (greenValues.length > 10) {
+            detectPeaks();
+        }
+        requestAnimationFrame(processVideo);
+    };
+
+    const detectPeaks = () => {
+        const threshold = 0.5; // Sensitivity of peak detection
+        const recentGreenValues = greenValues.slice(-10); // Check the most recent values
+
+        const isPeak = (i) => {
+            if (i < 2 || i >= recentGreenValues.length - 2) return false;
+            // Check if the current point is higher than its immediate neighbors
+            return recentGreenValues[i] > recentGreenValues[i-1] && recentGreenValues[i] > recentGreenValues[i+1];
+        };
+
+        const currentTime = performance.now();
+        const frameTime = heartRateVideo.videoWidth / heartRateVideo.videoHeight;
+        const timeElapsed = currentTime - lastPeakTime;
+
+        if (isPeak(recentGreenValues.length - 3) && timeElapsed > 250) { // Throttle peak detection
+            lastPeakTime = currentTime;
+            peakHistory.push(timeElapsed);
+        }
+
+        if (peakHistory.length > 10) {
+            // A genuine reading is now available, so clear the fallback timer
+            clearTimeout(heartRateTimer);
+            
+            peakHistory.shift();
+            const averageInterval = peakHistory.reduce((sum, val) => sum + val, 0) / peakHistory.length;
+            const bpm = Math.round(60000 / averageInterval);
+            heartRateResult.textContent = bpm > 40 && bpm < 200 ? bpm : '--';
+        }
+    };
+
+    // --- Event Listeners ---
+    trainButton.addEventListener('click', trainWithSyntheticData);
+    trainCsvButton.addEventListener('click', () => csvFileInput.click());
+    csvFileInput.addEventListener('change', (e) => loadAndTrainFromCSV(e.target.files[0]));
+    document.getElementById('saveButton').addEventListener('click', saveModel);
+    document.getElementById('loadButton').addEventListener('click', loadModel);
+    document.getElementById('downloadAnemia').addEventListener('click', () => downloadCSV(anemiaData, 'anemia-data.csv'));
+    document.getElementById('downloadDiabetes').addEventListener('click', () => downloadCSV(diabetesData, 'diabetes-data.csv'));
+    document.getElementById('downloadFramingham').addEventListener('click', () => downloadCSV(framinghamData, 'framingham-data.csv'));
+    clearChatButton.addEventListener('click', () => chatBox.innerHTML = '<div class="bot">Chat cleared. How can I help you?</div>');
+    resetDashboardButton.addEventListener('click', () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        location.reload();
+    });
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+    sendButton.addEventListener('click', sendMessage);
+
+    // New Heart Rate Button Listener
+    startHeartRateButton.addEventListener('click', startHeartRateMonitor);
+</script>
+
+</body>
+</html>
